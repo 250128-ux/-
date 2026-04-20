@@ -84,11 +84,11 @@
 
     <script>
         // =============================================
-        // ВАЖНО: ЗАМЕНИ ЭТИ ЗНАЧЕНИЯ НА СВОИ!
+        // ВАШИ ДАННЫЕ SUPABASE
         // =============================================
         const SUPABASE_URL = 'https://nnctnlrmpbhbdpenusod.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_6km0M68Q-1IQohr2b7tX9w_kIfzMTJS';
-        const MY_USER_ID = 'aee31338-d6c2-4e5e-8680-5aaa7ebbb065'; // ID из таблицы profiles
+        const MY_USER_ID = 'aee31338-d6c2-4e5e-8680-5aaa7ebbb065';
         // =============================================
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -140,7 +140,6 @@
             msgBox.textContent = '⏳ Обновляем...';
             msgBox.className = '';
 
-            // Обновляем статус только для своей записи по ID
             const { data, error } = await supabase
                 .from('profiles')
                 .update({ status: newStatus })
@@ -154,3 +153,15 @@
                 msgBox.textContent = `✅ Статус обновлён на "${newStatus}"!`;
                 msgBox.className = 'success';
                 document.getElementById('new-status').value = '';
+                loadProfiles(); // Обновляем список после изменения
+            }
+        }
+
+        // Привязываем кнопку
+        document.getElementById('update-btn').addEventListener('click', updateStatus);
+
+        // Загружаем профили при открытии страницы
+        loadProfiles();
+    </script>
+</body>
+</html>
