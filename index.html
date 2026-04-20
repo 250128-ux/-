@@ -6,107 +6,95 @@
     <title>Монитор статусов</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ... ваши стили ... */
-        .auth-form {
-            background: white;
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 30px auto;
             padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            background: #f5f5f5;
+            border-radius: 12px;
         }
-        .auth-form input {
-            display: block;
-            width: 100%;
+        .user-card {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
             margin-bottom: 10px;
-            box-sizing: border-box;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .hidden {
-            display: none;
+        .user-name {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        .user-status {
+            color: #555;
+            font-size: 16px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 70%;
+            font-size: 16px;
+        }
+        .controls {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        #message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
         }
     </style>
 </head>
 <body>
-    <!-- Форма входа -->
-    <div id="auth-section" class="auth-form">
-        <h2>Вход в систему</h2>
-        <input type="email" id="email" placeholder="Email" />
-        <input type="password" id="password" placeholder="Пароль" />
-        <button id="login-btn">Войти</button>
-        <div id="auth-message"></div>
-    </div>
 
-    <!-- Основной контент (скрыт до входа) -->
-    <div id="main-content" class="hidden">
-        <h1>👥 Статусы команды</h1>
-        <div id="user-list">Загрузка...</div>
+    <h1>👥 Статусы команды</h1>
+    <div id="user-list">Загрузка...</div>
 
-        <div class="controls">
-            <h3>✏️ Изменить мой статус</h3>
-            <input type="text" id="new-status" placeholder="Введите новый статус" />
-            <button id="update-btn">Обновить</button>
-            <div id="message"></div>
-        </div>
-        <button id="logout-btn" style="margin-top: 20px; background: #ef4444;">Выйти</button>
+    <div class="controls">
+        <h3>✏️ Изменить мой статус</h3>
+        <input type="text" id="new-status" placeholder="Введите новый статус" />
+        <button id="update-btn">Обновить</button>
+        <div id="message"></div>
     </div>
 
     <script>
+        // =============================================
+        // КОНФИГУРАЦИЯ (ТОЛЬКО ОДИН РАЗ!)
+        // =============================================
         const SUPABASE_URL = 'https://nnctnlrmpbhbdpenusod.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_6km0M68Q-1IQohr2b7tX9w_kIfzMTJS';
+        const MY_USER_ID = 'aee31338-d6c2-4e5e-8680-5aaa7ebbb065';
         
+        // Создаём клиент Supabase (ТОЛЬКО ОДИН РАЗ!)
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        let currentUserId = null;
+        // =============================================
 
-        // Проверка сессии при загрузке
-        async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
-            
-            if (session?.user) {
-                currentUserId = session.user.id;
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('main-content').classList.remove('hidden');
-                await loadProfiles();
-                console.log('✅ Авторизован как:', currentUserId);
-            } else {
-                document.getElementById('auth-section').classList.remove('hidden');
-                document.getElementById('main-content').classList.add('hidden');
-            }
-        }
-
-        // Вход
-        async function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const msg = document.getElementById('auth-message');
-            
-            if (!email || !password) {
-                msg.textContent = '❌ Введите email и пароль';
-                return;
-            }
-
-            msg.textContent = '⏳ Входим...';
-            
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email, password
-            });
-
-            if (error) {
-                msg.textContent = `❌ Ошибка: ${error.message}`;
-            } else {
-                msg.textContent = '✅ Успешно!';
-                await checkSession();
-            }
-        }
-
-        // Выход
-        async function logout() {
-            await supabase.auth.signOut();
-            currentUserId = null;
-            document.getElementById('auth-section').classList.remove('hidden');
-            document.getElementById('main-content').classList.add('hidden');
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
-        }
-
-        // Загрузка профилей
+        // Функция загрузки всех профилей
         async function loadProfiles() {
             const listDiv = document.getElementById('user-list');
             listDiv.innerHTML = 'Загрузка...';
@@ -121,7 +109,7 @@
                 return;
             }
 
-            if (!data || data.length === 0) {
+            if (data.length === 0) {
                 listDiv.innerHTML = '<div>Нет данных. Добавьте запись в таблицу.</div>';
                 return;
             }
@@ -130,11 +118,8 @@
             data.forEach(user => {
                 const card = document.createElement('div');
                 card.className = 'user-card';
-                if (user.id === currentUserId) {
-                    card.style.border = '2px solid #3b82f6';
-                }
                 card.innerHTML = `
-                    <div class="user-name">${user.username || 'Без имени'} ${user.id === currentUserId ? '(ВЫ)' : ''}</div>
+                    <div class="user-name">${user.username || 'Без имени'}</div>
                     <div class="user-status">Статус: ${user.status || 'Нет статуса'}</div>
                     <div style="font-size: 12px; color: #999; margin-top: 8px;">ID: ${user.id}</div>
                 `;
@@ -142,17 +127,11 @@
             });
         }
 
-        // Обновление статуса
+        // Функция обновления статуса
         async function updateStatus() {
             const newStatus = document.getElementById('new-status').value;
             const msgBox = document.getElementById('message');
             
-            if (!currentUserId) {
-                msgBox.textContent = '❌ Вы не авторизованы!';
-                msgBox.className = 'error';
-                return;
-            }
-
             if (!newStatus) {
                 msgBox.textContent = '❌ Введите статус!';
                 msgBox.className = 'error';
@@ -165,7 +144,7 @@
             const { data, error } = await supabase
                 .from('profiles')
                 .update({ status: newStatus })
-                .eq('id', currentUserId)  // Используем ID авторизованного пользователя
+                .eq('id', MY_USER_ID)
                 .select();
 
             if (error) {
@@ -175,17 +154,15 @@
                 msgBox.textContent = `✅ Статус обновлён на "${newStatus}"!`;
                 msgBox.className = 'success';
                 document.getElementById('new-status').value = '';
-                await loadProfiles();
+                loadProfiles();
             }
         }
 
-        // Привязка событий
-        document.addEventListener('DOMContentLoaded', () => {
-            checkSession();
-            document.getElementById('login-btn').addEventListener('click', login);
-            document.getElementById('logout-btn').addEventListener('click', logout);
-            document.getElementById('update-btn').addEventListener('click', updateStatus);
-        });
+        // Привязываем кнопку
+        document.getElementById('update-btn').addEventListener('click', updateStatus);
+
+        // Загружаем профили при открытии страницы
+        loadProfiles();
     </script>
 </body>
 </html>
